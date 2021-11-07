@@ -1,4 +1,4 @@
-for T in $( echo events ; echo attendees_sources ; echo attendees ) ; do
+for T in $( echo events ; echo attendees_sources ; echo attendees ; echo events_attendance ; echo events_attendance_lst ) ; do
     echo "table $T"
     ./psql.sh -c "grant all on $T to client"
     ./psql.sh -c "grant all on $T""_id_seq to client"

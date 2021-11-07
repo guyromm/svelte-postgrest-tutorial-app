@@ -43,6 +43,8 @@ events_attendance.TABLE.sql
 TABLE.events_attendance.COMMENT.sql
 events_attendance_id_seq.SEQUENCE.sql
 events_attendance_id_seq.SEQUENCE.OWNED.BY.sql
+events_attendance_last.VIEW.sql
+events_attendance_lst.VIEW.sql
 events_id_seq.SEQUENCE.sql
 events_id_seq.SEQUENCE.OWNED.BY.sql
 settings.TABLE.sql
@@ -63,6 +65,7 @@ attendees.attendees_attendee_source_id_fkey.FK.CONSTRAINT.sql
 attendees.attendees_owner_fkey.FK.CONSTRAINT.sql
 attendees_sources.attendees_sources_owner_id_fkey.FK.CONSTRAINT.sql
 events_attendance.events_attendance_attendee_id_fkey.FK.CONSTRAINT.sql
+events_attendance.events_attendance_event_id_fkey.FK.CONSTRAINT.sql
 events_attendance.events_attendance_owner_fkey.FK.CONSTRAINT.sql
 events.events_attendee_source_id_fkey.FK.CONSTRAINT.sql
 events.events_owner_id_fkey.FK.CONSTRAINT.sql
@@ -71,6 +74,8 @@ attendees.attendees_policy.POLICY.sql
 attendees_sources.ROW.SECURITY.sql
 attendees_sources.attendees_sources_policy.POLICY.sql
 events.ROW.SECURITY.sql
+events_attendance.ROW.SECURITY.sql
+events_attendance.events_attendance_policy.POLICY.sql
 events.events_policy.POLICY.sql
 FUNCTION.role.email.cv.newrole.cv.ACL.sql
 FUNCTION.user_delete.email.cv.ACL.sql
@@ -81,4 +86,7 @@ TABLE.attendees.ACL.sql
 SEQUENCE.attendees_id_seq.ACL.sql
 TABLE.attendees_sources.ACL.sql
 TABLE.events.ACL.sql
+TABLE.events_attendance.ACL.sql
+SEQUENCE.events_attendance_id_seq.ACL.sql
+TABLE.events_attendance_lst.ACL.sql
 SEQUENCE.events_id_seq.ACL.sql

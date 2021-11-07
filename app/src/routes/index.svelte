@@ -12,7 +12,7 @@
   async function load() {
     try {
       message= 'Loading';
-      sources = await select('attendees_sources',{select:'*,attendees(*)'})
+      sources = await select('attendees_sources',{select:'*,attendees(*),events(*)'})
       message='Loaded';
     } catch (err) {
       message=err.toString();
@@ -216,12 +216,16 @@ src="https://apis.google.com/js/api.js"
       <tr>
 	<th>id</th>
 	<th class='ralign'>attendees</th>
+	<th class='ralign'>events</th>
+	<th>sheet link</th>
+	<th>actions</th>
       </tr>
     </thead>
   {#each sources as s}
     <tr>
-      <td><a href={`/attendees?src=${s.id}`}>{s.id}</a></td>
-      <td class='ralign'>{s.attendees.length}
+      <td>{s.id}</td>
+      <td class='ralign'><a href={`/attendees?src=${s.id}`}>{s.attendees.length}</a></td>
+      <td class='ralign'><a href={`/events?src=${s.id}`}>{s.events.length}</a></td>
       <td><a target='_blank'
 	     href={`https://docs.google.com/spreadsheets/d/${s.google_sheet_id}/edit`}>${s.google_sheet_id}</a></td>
       <td>
