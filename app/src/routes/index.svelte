@@ -1,176 +1,236 @@
 <script>
- import { Cover,
-	Stack,
-	Bracket,
-	Cluster,
-	Sidebar,
-	Switcher,
-	Frame,
-	Reel,
-	Imposter,
-	Grid,
-	Box} from '../components/layout';
-import Presentation from '../components/Presentation.svelte';
+  import {onMount} from 'svelte';
+  import {select,insert,del} from '../../../common/postgrest.js';
+  import vars from '$lib/variables.js';
+  const l = console.log;
+  const e = console.error;
+  const DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
+  const SCOPES = "https://www.googleapis.com/auth/drive"; // spreadsheets"; // readonly";
+
+
+  let sources;
+  async function load() {
+    try {
+      message= 'Loading';
+      sources = await select('attendees_sources',{select:'*,attendees(*)'})
+      message='Loaded';
+    } catch (err) {
+      message=err.toString();
+    }
+
+  }
+  onMount(load);
+
+
+  function handleClientLoad() {
+    gapi.load('client:auth2', initClient);
+  }
+
+  let signedIn=false;
+  
+  function updateSigninStatus(isSignedIn) {
+    signedIn=true;
+  }
+      /**
+       *  Initializes the API client library and sets up sign-in state
+       *  listeners.
+       */
+  let gai; //gapi.auth2.getAuthInstance()
+  function getAuthInstance() {
+    gai = gapi.auth2.getAuthInstance();
+    if (!gai)
+      message='Could not obtain Google API auth instance. are client id / api key set?';
+    return gai;
+  }
+  async function initClient() {
+    await gapi.client.init({
+      apiKey: vars.API_KEY,
+      clientId: vars.CLIENT_ID,
+      discoveryDocs: DISCOVERY_DOCS,
+      scope: SCOPES
+    });
+    // Listen for sign-in state changes.
+    if (!getAuthInstance())
+      return;
+    gai.isSignedIn.listen(updateSigninStatus);
+    // Handle the initial sign-in state.
+    updateSigninStatus(gai.isSignedIn.get());
+    //authorizeButton.onclick = handleAuthClick;
+    //signoutButton.onclick = handleSignoutClick;
+      
+  }
+  
+  function onload() {
+    handleClientLoad();
+  }
+
+  window.gapi_onload = onload;
+  
+  let busy={};
+  let data={};
+  
+  async function loadContents(sheetId,s) {
+    busy[sheetId]=true;
+    let o;
+    try {
+      o = await gapi.client.sheets.spreadsheets.get({spreadsheetId:sheetId});
+    } catch (err) {
+      message=JSON.stringify(err); //.toString();
+      busy[sheetId]=false;
+      return;
+    }
+
+    if (!s)
+    {
+      try {
+	s = (await (await insert('attendees_sources',{id:o.result.properties.title,
+						      google_sheet_id:sheetId,
+						     })).json())[0];
+      } catch (err) {
+	busy[sheetId]=false;
+	message=err.toString();
+	return;
+      }
+      l('source inserted',s);      
+    }
+    else
+      l('using existing source',s);
+
+    
+    l('o=',o);
+    
+    let r = await gapi.client.sheets.spreadsheets.values.get({spreadsheetId:sheetId,
+                                                              range:'A1:Z999'});
+    l('loadContents response',r);
+    let range=r.result.range;
+    let header=[];
+    let values=[];
+    if (r.result.values && r.result.values.length)
+    {
+      header = r.result.values[0];
+      values = r.result.values.slice(1);
+    }
+    let dictValues = [];
+    for (let vr of values)
+    {
+      let nr = Object.fromEntries(vr.map((vrv,idx)=>([header[idx]?header[idx]:'column-'+idx,vrv])));
+      dictValues.push(nr);
+    }
+    l('range',range);
+    l('values',dictValues);
+    data[sheetId]={range,header,dictValues};
+    
+    busy[sheetId]=false;
+    //recalcDataState();
+
+    try {
+      l('existing attendees',s.attendees);
+      const exemails = [...new Set(s.attendees?s.attendees.map(a=>a.email):[])];
+      const exsnames = s.attendees?s.attendees.map(a=>a.name):[];
+      const exnames = [...new Set(
+	(s.attendees?s.attendees.map(a=>`${a.first_name} ${a.last_name}`):[]).concat(exsnames)
+      )];
+      l('exemails',exemails);
+      l('exnames',exnames);
+      const shouldInsert = a=>{
+	if (!Object.keys(a).length) return false;
+	const rt =  (!exemails.includes(a.email) && !exnames.includes(`${a.first_name} ${a.last_name}`))
+	l('checking if',a,':',a.email,'or',a.first_name,a.last_name,'is present already =>',rt);
+	return rt;
+      }
+      const fieldMapper = meta=>{
+	let rt = {attendee_source_id:s.id,
+		  meta,
+		  first_name:meta.first_name,
+		  last_name:meta.last_name,
+		  email:meta.email};
+	if (!rt.first_name && !rt.last_name && meta.name)
+	{
+	  rt.first_name = meta.name.split(' ')[0];
+	  rt.last_name = meta.name.split(' ').slice(1).join(' ');
+	}
+	return rt;
+      }
+      
+      const toins = dictValues
+		   .filter(shouldInsert)
+		   .map(fieldMapper);
+      for (let i of toins)
+	await insert('attendees',i);
+      //await insert('attendees',toins);
+    } catch (err) {
+      busy[sheetId]=false;
+      message=err.toString();
+      throw err;
+      return;
+    }
+    await load();
+  }
+  let newSheetId=vars.DEFAULT_INGEST_SHEET_ID;
+  function ingest() {
+    loadContents(newSheetId);
+  }
+  async function delSource(sid) {
+    if (!confirm(`Really delete source ${sid}?`)) return;
+    await del('attendees_sources',{id:'eq.'+sid});
+    await load();
+  }
+  let message='';
+  async function signOut() {
+    if (!getAuthInstance()) return;
+    await gai.signOut();
+    updateSigninStatus(false);
+  }
+  async function signIn() {
+    if (!getAuthInstance()) return;    
+    await gai.signIn();
+    updateSigninStatus(true);
+  }
 </script>
-
 <style>
-a[target="_blank"] {
-color:red;
-}
+  .ralign { text-align:right; }
 </style>
-<h1><a href="https://every-layout.dev/layouts/grid/" target='_blank'>the grid (you're here now)</a></h1>
-<Grid minWidth='12rem'>
-    <Presentation>    
-	<a slot="title" href="stack"><h5>Stack</h5></a>
-	<Stack recursive>
-	    <ul>
-		<li><p>some</p></li>
-		<li><p>equally</p></li>
-		<li><p>spaced</p></li>
-		<li><p>content</p></li>
-	    </ul>
-	</Stack>
-    </Presentation>
+<svelte:head>
+  <script async defer
+src="https://apis.google.com/js/api.js"
+	  onload={onload}
+	  onerror={(e)=>alert('error loading gapi',e)}
+	  onreadystatechange="if (this.readyState === 'complete') this.onload(); else alert('wtf');z"
+    >
+  </script>
+</svelte:head>
+[ signed in: {signedIn}
 
-    <Presentation>
-	<a href="box"><h5>Box</h5></a>
-	<Box padding="s1"></Box>
-    </Presentation>
+<button on:click={signIn}>sign in</button> | 
 
-    <Presentation>
-	<a slot="title" href="bracket"><h5>Bracket</h5></a>
-	<Bracket>
-	    <div slot="left">
-		<Box padding="zero">
-		    <div style="height:calc(var(--s1) * 2);"></div>
-		</Box>
-	    </div>
-	    <Box padding="s1"></Box>
-	    <div slot="right">
-		<Box padding="zero">
-		    <div style="height:calc(var(--s1) * 2);"></div>
-		</Box>
-	    </div>
-	</Bracket>
-    </Presentation>
+<button on:click={signOut}>sign out</button>  
 
-    <Presentation>
-	<a slot="title" href="cluster"><h5>Cluster</h5></a>
-	<Cluster>
-	    <ul style="list-style: none">
-		<li><p>Content</p></li>
-		<li><p>Content</p></li>
-		<li><p>Content</p></li>
-		<li><p>Content</p></li>
-		<li><p>Content</p></li>
-	    </ul>
-	</Cluster>
-    </Presentation>
+<input type='text' placeholder='please enter a google sheet id here' bind:value={newSheetId}/><button on:click={ingest}>ingest</button>
+{message}
 
-    <Presentation>
-	<a slot="title" href="sidebar"><h5>Sidebar</h5></a>
-	<Sidebar>
-	    <div slot="sidebar">
-		<Box padding="s-2" color="white">
-		    <Stack splitAfter="1">
-			<p>A</p>
-			<p>B</p>
-		    </Stack>
-		</Box>
-	    </div>
-	    <div slot="not-sidebar">
-		<Box color="white">
-		    <p>Main Content</p>
-		</Box>
-	    </div>
-	</Sidebar>
-    </Presentation>
-
-    <Presentation>
-	<a slot="title" href="switcher"><h5>Switcher</h5></a>
-	<Switcher minWidth="13rem">
-	    <Box></Box>
-	    <Box></Box>
-	    <Box></Box>
-	</Switcher>
-    </Presentation>
-
-    <Presentation>
-	<a slot="title" href="cover"><h5>Cover</h5></a>
-	<Cover minHeight="10vh">
-	    <div slot="above">
-		<Box padding="zero"></Box>
-	    </div>
-	    <Box padding="s1"></Box>
-	    <div slot="below">
-		<Box padding="zero"></Box>
-	    </div>
-	</Cover>
-    </Presentation>
-
-    <Presentation>
-	<a slot="title" href="."><h5>Grid</h5></a>
-	<div style="min-width: 8rem;">
-	    <Grid minWidth="s1">
-		<Box padding="s-3" color="white">X</Box>
-		<Box padding="s-3" color="white">o</Box>
-		<Box padding="s-3" color="white">o</Box>
-		<Box padding="s-3" color="white">o</Box>
-		<Box padding="s-3" color="white">X</Box>
-		<Box padding="s-3" color="white">o</Box>
-		<Box padding="s-3" color="white">o</Box>
-		<Box padding="s-3" color="white">o</Box>
-		<Box padding="s-3" color="white">X</Box>
-	    </Grid>
-	</div>
-    </Presentation>
-
-    <Presentation>
-	<a slot="title" href="frame"><h5>Frame</h5></a>
-	<Box padding="zero">
-	    <Frame>
-		<img src="favicon.png" alt="favicon">
-	    </Frame>
-	</Box>
-    </Presentation>
-
-    <Presentation>
-	<a slot="title" href="reel"><h5>Reel</h5></a>
-	<Box padding="zero" backgroundColor="white">
-	    <div style="max-width: 12rem;">
-		<Reel itemWidth="s4">
-		    <img src="favicon.png" alt="favicon">
-		    <img src="favicon.png" alt="favicon">
-		    <img src="favicon.png" alt="favicon">
-		    <img src="favicon.png" alt="favicon">
-		    <img src="favicon.png" alt="favicon">
-		    <img src="favicon.png" alt="favicon">
-		    <img src="favicon.png" alt="favicon">
-		    <img src="favicon.png" alt="favicon">
-		    <img src="favicon.png" alt="favicon">
-		    <img src="favicon.png" alt="favicon">
-		</Reel>
-	    </div>
-	</Box>
-    </Presentation>
-
-    <Presentation>
-	<a slot="title" href="imposter"><h5>Imposter</h5></a>
-	<Box padding="zero" backgroundColor="white">
-	    <div style="max-width: 12rem; position: relative;">
-		<p>Some obscured text. Some obscured text. Some obscured text. Some obscured text. Some obscured text.</p>
-		<Imposter>
-		    <Box color="white" padding="s-2">
-			<p>I'm infront!</p>
-			<br>
-			<br>
-			<br>
-			<br>
-			<p>And scrollable!</p>
-		    </Box>
-		</Imposter>
-	    </div>
-	</Box>
-    </Presentation>
-</Grid>
+  ]<hr/>
+{#if sources}
+  <h4>{sources.length} sources</h4>
+  <table>
+    <thead>
+      <tr>
+	<th>id</th>
+	<th class='ralign'>attendees</th>
+      </tr>
+    </thead>
+  {#each sources as s}
+    <tr>
+      <td>{s.id}</td>
+      <td class='ralign'>{s.attendees.length}
+      <td><a target='_blank'
+	     href={`https://docs.google.com/spreadsheets/d/${s.google_sheet_id}/edit`}>${s.google_sheet_id}</a></td>
+      <td>
+	<button on:click={()=>delSource(s.id)}>delete</button>
+	<button on:click={()=>loadContents(s.google_sheet_id,s)}>sync</button>
+      </td>
+    </tr>
+  {/each}
+</table>
+  
+{/if}
 
