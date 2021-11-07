@@ -29,7 +29,7 @@
   let signedIn=false;
   
   function updateSigninStatus(isSignedIn) {
-    signedIn=true;
+    signedIn=isSignedIn;
   }
       /**
        *  Initializes the API client library and sets up sign-in state
@@ -199,9 +199,12 @@ src="https://apis.google.com/js/api.js"
     >
   </script>
 </svelte:head>
-[ signed in: {signedIn}
+[ google 
 
-<button on:click={signIn}>sign in</button> | 
+{#if !signedIn}<button disabled={signedIn} on:click={signIn}>sign in</button>
+  {:else}
+    <button disabled={!signedIn} on:click={signOut}>sign out</button>
+    {/if}
 
 <button on:click={signOut}>sign out</button>  
 
