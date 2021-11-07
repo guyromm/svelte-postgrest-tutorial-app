@@ -4,6 +4,8 @@ CREATE TABLE public.events (
     attendee_source_id character varying NOT NULL,
     owner_id character varying DEFAULT current_setting('request.jwt.claim.email'::text, true)
 );
+comment on table events is 'event definitions for which we''d like to write down attendance.';
+
 CREATE TABLE public.attendees (
     id integer NOT NULL,
     ts timestamp with time zone DEFAULT now(),
@@ -13,6 +15,7 @@ CREATE TABLE public.attendees (
     first_name character varying,
     last_name character varying
 );
+comment on table attendees is 'attendees whose attendance we would like to mark ';
 
 CREATE SEQUENCE public.events_id_seq
     AS integer
@@ -28,6 +31,8 @@ CREATE TABLE public.attendees_sources (
     ts timestamp with time zone DEFAULT now(),
     owner_id character varying DEFAULT current_setting('request.jwt.claim.email'::text, true)
 );
+comment on table attendees_sources is 'attendee list sources. these would be google sheets or uploaded csv files';
+
 CREATE TABLE public.events_attendance (
     id integer NOT NULL,
     ts timestamp with time zone DEFAULT now(),
@@ -36,6 +41,8 @@ CREATE TABLE public.events_attendance (
     is_present boolean,
     notes character varying
 );
+comment on table events_attendance is 'actual attendance to events by attendees';
+
 CREATE SEQUENCE public.attendees_id_seq
     AS integer
     START WITH 1
@@ -43,10 +50,13 @@ CREATE SEQUENCE public.attendees_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER TABLE ONLY public.attendees ALTER COLUMN id SET DEFAULT nextval('public.attendees_id_seq'::regclass);    
+ALTER TABLE ONLY public.attendees ALTER COLUMN id SET DEFAULT nextval('public.attendees_id_seq'::regclass);
+
 ALTER TABLE ONLY public.events
     ADD CONSTRAINT events_pkey PRIMARY KEY (id);
+    
 ALTER SEQUENCE public.events_id_seq OWNED BY public.events.id;
+
 CREATE SEQUENCE public.events_attendance_id_seq
     AS integer
     START WITH 1
@@ -54,6 +64,7 @@ CREATE SEQUENCE public.events_attendance_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
+    
 ALTER TABLE ONLY public.events_attendance ALTER COLUMN id SET DEFAULT nextval('public.events_attendance_id_seq'::regclass);
     
 ALTER SEQUENCE public.attendees_id_seq OWNED BY public.attendees.id;
