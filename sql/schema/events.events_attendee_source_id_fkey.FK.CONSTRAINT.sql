@@ -2,7 +2,7 @@
 --
 
 ALTER TABLE ONLY public.events
-    ADD CONSTRAINT events_attendee_source_id_fkey FOREIGN KEY (attendee_source_id) REFERENCES public.attendees_sources(id);
+    ADD CONSTRAINT events_attendee_source_id_fkey FOREIGN KEY (attendee_source_id) REFERENCES public.attendees_sources(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --

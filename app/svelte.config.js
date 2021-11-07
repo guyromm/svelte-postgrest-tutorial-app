@@ -1,3 +1,5 @@
+import dotenv from 'dotenv'
+dotenv.config();
 // argh: https://stackoverflow.com/questions/67245743/config-kit-adapter-should-be-an-object-with-an-adapt-method
 import adapter from '@sveltejs/adapter-static';
 //import adapter from '@sveltejs/adapter-node';

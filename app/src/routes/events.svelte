@@ -1,7 +1,7 @@
 <script>
   import {onMount} from 'svelte';
   import { page } from '$app/stores'
-  import {select,selectOne,insert} from '../../../common/postgrest.js';
+  import {select,selectOne,insert,del} from '../../../common/postgrest.js';
   const l =console.log;
   let events;
   let sources;
@@ -13,25 +13,32 @@
       src = await selectOne('attendees_sources',{id:'eq.'+src_id});
     else
       src = null;
-    events = await select('events');
+    events = await select('events',{select:'*,attendees_sources(*)'});
     sources = await select('attendees_sources');
   }
   onMount(load);
   let newEvent={name:'',attendee_source_id:null};
   async function create() {
     await insert('events',newEvent);
+    await load();
+  }
+  async function delEvent(eid) {
+    if (!confirm(`Really delete event ${eid}?`)) return;
+    await del('events',{id:'eq.'+eid});
+    await load();
   }
 </script>
 
 <input type='text' bind:value={newEvent.name}/>
 
-<select disabled={!sources} bind:value={newEvent.attendee_source_id}>
+<select placeholder='please select an attendee list'
+	disabled={!sources} bind:value={newEvent.attendee_source_id}>
   {#each (sources?sources:[]) as s}
-    <option value={s.id}>{s.id}</option>
+    <option value={s.id}>{s.name}</option>
   {/each}
 </select>
 
-<button on:click={create}>create</button>
+<button disabled={!newEvent.attendee_source_id} on:click={create}>create</button>
 {#if !events}
   loading
 {:else}
@@ -49,10 +56,14 @@
     <tbody>
       {#each events as e}
 	<tr>
-	  <td><a href={`/attendance?id=${e.id}`}>{e.id}</a></td>
+	  <td><a title='mark attendance for this event'
+		 href={`/attendance?id=${e.id}`}>{e.id}</a></td>
 	  <td>{e.name}</td>
 	  <td>{e.ts}</td>
-	  <td>{e.attendee_source_id}</td>
+	  <td>{#if e.attendee_source_id}
+	    {e.attendee_source_id}. {e.attendees_sources.name}
+	  {/if}
+	</td>
 	  <td>
 	    <button on:click={()=>delEvent(e.id)}>delete</button>
 	  </td>
