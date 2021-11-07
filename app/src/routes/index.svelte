@@ -220,7 +220,7 @@ src="https://apis.google.com/js/api.js"
     </thead>
   {#each sources as s}
     <tr>
-      <td>{s.id}</td>
+      <td><a href={`/attendees?src=${s.id}`}>{s.id}</a></td>
       <td class='ralign'>{s.attendees.length}
       <td><a target='_blank'
 	     href={`https://docs.google.com/spreadsheets/d/${s.google_sheet_id}/edit`}>${s.google_sheet_id}</a></td>

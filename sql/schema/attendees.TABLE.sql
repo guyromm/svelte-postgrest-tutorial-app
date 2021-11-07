@@ -9,7 +9,8 @@ CREATE TABLE public.attendees (
     first_name character varying,
     last_name character varying,
     meta jsonb,
-    attendee_source_id character varying NOT NULL
+    attendee_source_id character varying NOT NULL,
+    is_disabled boolean DEFAULT false
 );
 
 
