@@ -31,7 +31,7 @@
   let signedIn=false;
   
   function updateSigninStatus(isSignedIn) {
-    signedIn=true;
+    signedIn=isSignedIn;
   }
       /**
        *  Initializes the API client library and sets up sign-in state
@@ -189,11 +189,12 @@ src="https://apis.google.com/js/api.js"
     >
   </script>
 </svelte:head>
-[ signed in: {signedIn}
+[ google 
 
-<button on:click={signIn}>sign in</button> | 
-
-<button on:click={signOut}>sign out</button>  
+{#if !signedIn}<button disabled={signedIn} on:click={signIn}>sign in</button>
+  {:else}
+    <button disabled={!signedIn} on:click={signOut}>sign out</button>
+    {/if}
 
 <input type='text' placeholder='please enter a google sheet id here' bind:value={newSheetId}/><button on:click={ingest}>ingest</button>
 <b>please provide a sheet with the fields: email & name (or: first_name, last_name)</b>
