@@ -60,59 +60,21 @@
   
   let busy={};
   let data={};
-  
-  async function loadContents(sheetId,s) {
-    busy[sheetId]=true;
-    let o;
-    try {
-      o = await gapi.client.sheets.spreadsheets.get({spreadsheetId:sheetId});
-    } catch (err) {
-      message=JSON.stringify(err); //.toString();
-      busy[sheetId]=false;
-      return;
-    }
 
-    if (!s)
-    {
-      try {
-	s = (await (await insert('attendees_sources',{name:o.result.properties.title,
-						      google_sheet_id:sheetId,
-						     })).json())[0];
-      } catch (err) {
-	busy[sheetId]=false;
-	message=err.toString();
-	return;
-      }
-      l('source inserted',s);      
-    }
-    else
-      l('using existing source',s);
-
-    
-    l('o=',o);
-    
-    let r = await gapi.client.sheets.spreadsheets.values.get({spreadsheetId:sheetId,
-                                                              range:'A1:Z999'});
-    l('loadContents response',r);
-    let range=r.result.range;
-    let header=[];
-    let values=[];
-    if (r.result.values && r.result.values.length)
-    {
-      header = r.result.values[0];
-      values = r.result.values.slice(1);
-    }
+  async function insertAttendees(s,header,values,sheetId=null,range=null) {
     let dictValues = [];
     for (let vr of values)
     {
       let nr = Object.fromEntries(vr.map((vrv,idx)=>([header[idx]?header[idx]:'column-'+idx,vrv])));
       dictValues.push(nr);
     }
-    l('range',range);
     l('values',dictValues);
-    data[sheetId]={range,header,dictValues};
-    
-    busy[sheetId]=false;
+    if (sheetId)
+    {
+      l('range',range);
+      data[sheetId]={range,header,dictValues};
+      busy[sheetId]=false;
+    }
     //recalcDataState();
 
     try {
@@ -145,19 +107,68 @@
       }
       
       const toins = dictValues
-		   .filter(shouldInsert)
-		   .map(fieldMapper);
+	    .filter(shouldInsert)
+	    .map(fieldMapper);
       for (let i of toins)
 	await insert('attendees',i);
       //await insert('attendees',toins);
     } catch (err) {
-      busy[sheetId]=false;
+      if (sheetId)
+	busy[sheetId]=false;
       message=err.toString();
       throw err;
       return;
     }
+  }
+  
+  async function loadContents(sheetId,s) {
+    busy[sheetId]=true;
+    let o;
+    try {
+      o = await gapi.client.sheets.spreadsheets.get({spreadsheetId:sheetId});
+    } catch (err) {
+      message=JSON.stringify(err); //.toString();
+      busy[sheetId]=false;
+      return;
+    }
+
+    if (!s)
+    {
+      try {
+	s = (await (await insert('attendees_sources',
+				 {name:o.result.properties.title,
+				  google_sheet_id:sheetId,
+				  typ:'google sheet',
+				 })).json())[0];
+      } catch (err) {
+	busy[sheetId]=false;
+	message=err.toString();
+	return;
+      }
+      l('source inserted',s);      
+    }
+    else
+      l('using existing source',s);
+
+    
+    l('o=',o);
+    
+    let r = await gapi.client.sheets.spreadsheets.values.get(
+      {spreadsheetId:sheetId,
+       range:'A1:Z999'});
+    l('loadContents response',r);
+    let range=r.result.range;
+    let header=[];
+    let values=[];
+    if (r.result.values && r.result.values.length)
+    {
+      header = r.result.values[0];
+      values = r.result.values.slice(1);
+    }
+    await insertAttendees(s,header,values,sheetId,range);
     await load();
   }
+  
   let newSheetId=vars.DEFAULT_INGEST_SHEET_ID;
   function ingest() {
     loadContents(newSheetId);
@@ -175,6 +186,53 @@
   async function signIn() {
     await gapi.auth2.getAuthInstance().signIn();
     updateSigninStatus(true);
+  }
+  let files;
+
+  function readFileAsync(file) {
+  return new Promise((resolve, reject) => {
+    let reader = new FileReader();
+
+    reader.onload = () => {
+      resolve(reader.result);
+    };
+
+    reader.onerror = reject;
+
+    reader.readAsText(file);
+  })
+}
+
+  
+  async function upload() {
+    if (!files) return;
+    for (let f of files)
+    {
+      let contents = await readFileAsync(f);
+      const parsed = contents.split('\n').map(l=>l.split(','));
+      let header=[];
+      let values=[];
+      if (parsed && parsed.length)
+      {
+	header = parsed[0];
+	values = parsed.slice(1);
+      }
+      
+      l(f.name,'contents=',contents,'values=',values);
+      let s;
+      try {
+	s = (await (await insert('attendees_sources',
+				 {name:f.name,
+				  typ:'csv upload'})).json())[0];
+      } catch (err) {
+	message = err.toString();
+	return;
+      }
+
+      await insertAttendees(s,header,values);
+      await load();
+      
+    }
   }
 </script>
 <style>
@@ -196,6 +254,7 @@ src="https://apis.google.com/js/api.js"
 <button on:click={signOut}>sign out</button>  
 
 <input type='text' placeholder='please enter a google sheet id here' bind:value={newSheetId}/><button on:click={ingest}>ingest</button>
+<input type=file bind:files/><button on:click={upload}>upload</button>
 <b>please provide a sheet with the fields: email & name (or: first_name, last_name)</b>
 {message}
 
@@ -207,6 +266,7 @@ src="https://apis.google.com/js/api.js"
       <tr>
 	<th>id</th>
 	<th>name</th>
+	<th>type</th>
 	<th class='ralign'>attendees</th>
 	<th class='ralign'>events</th>
 	<th>sheet link</th>
@@ -217,13 +277,16 @@ src="https://apis.google.com/js/api.js"
     <tr>
       <td>{s.id}</td>
       <td><input type='text' bind:value={s.name} on:change={()=>update('attendees_sources',{id:s.id,name:s.name})}/></td>
+      <td>{s.typ}</td>
       <td class='ralign'><a href={`/attendees?src=${s.id}`}>{s.attendees.length}</a></td>
       <td class='ralign'><a href={`/events?src=${s.id}`}>{s.events.length}</a></td>
       <td><a target='_blank'
 	     href={`https://docs.google.com/spreadsheets/d/${s.google_sheet_id}/edit`}>${s.google_sheet_id}</a></td>
       <td>
 	<button on:click={()=>delSource(s.id)}>delete</button>
-	<button on:click={()=>loadContents(s.google_sheet_id,s)}>sync</button>
+	{#if s.typ==='google sheet'}
+	  <button on:click={()=>loadContents(s.google_sheet_id,s)}>sync</button>
+	{/if}
       </td>
     </tr>
   {/each}

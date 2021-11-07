@@ -6,7 +6,8 @@ CREATE TABLE public.attendees_sources (
     ts timestamp with time zone DEFAULT now(),
     owner_id character varying DEFAULT current_setting('request.jwt.claim.email'::text, true),
     google_sheet_id character varying,
-    id integer NOT NULL
+    id integer NOT NULL,
+    typ character varying
 );
 
 
