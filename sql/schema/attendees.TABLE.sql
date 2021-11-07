@@ -10,7 +10,9 @@ CREATE TABLE public.attendees (
     last_name character varying,
     meta jsonb,
     is_disabled boolean DEFAULT false,
-    attendee_source_id integer
+    attendee_source_id integer,
+    pic_mime character varying,
+    pic text
 );
 
 

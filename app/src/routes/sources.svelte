@@ -2,6 +2,7 @@
   import {onMount} from 'svelte';
   import {select,insert,del,update} from '../../../common/postgrest.js';
   import vars from '$lib/variables.js';
+  import {readFileAsync} from '$lib/funcs.js';
   const l = console.log;
   const e = console.error;
   const DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
@@ -189,26 +190,11 @@
   }
   let files;
 
-  function readFileAsync(file) {
-  return new Promise((resolve, reject) => {
-    let reader = new FileReader();
-
-    reader.onload = () => {
-      resolve(reader.result);
-    };
-
-    reader.onerror = reject;
-
-    reader.readAsText(file);
-  })
-}
-
-  
   async function upload() {
     if (!files) return;
     for (let f of files)
     {
-      let contents = await readFileAsync(f);
+      let contents = await readFileAsync(f,'readAsText');
       const parsed = contents.split('\n').map(l=>l.split(','));
       let header=[];
       let values=[];
@@ -254,8 +240,10 @@ src="https://apis.google.com/js/api.js"
     <button disabled={!signedIn} on:click={signOut}>sign out</button>
     {/if}
 
-<input type='text' placeholder='please enter a google sheet id here' bind:value={newSheetId}/><button on:click={ingest}>ingest</button>
-<input type=file bind:files/><button on:click={upload}>upload</button>
+<input type='text' placeholder='please enter a google sheet id here' bind:value={newSheetId}/><button on:click={ingest}
+												      disabled={!signedIn || !newSheetId}
+												      title={!signedIn?'gotta be signed in first!':'click to ingest selected sheet'}>ingest</button>
+<input type=file bind:files on:change={upload}/>
 <b>please provide a sheet with the fields: email & name (or: first_name, last_name)</b>
 {message}
 
@@ -281,12 +269,15 @@ src="https://apis.google.com/js/api.js"
       <td>{s.typ}</td>
       <td class='ralign'><a href={`/attendees?src=${s.id}`}>{s.attendees.length}</a></td>
       <td class='ralign'><a href={`/events?src=${s.id}`}>{s.events.length}</a></td>
-      <td><a target='_blank'
-	     href={`https://docs.google.com/spreadsheets/d/${s.google_sheet_id}/edit`}>${s.google_sheet_id}</a></td>
+      <td>{#if s.typ==='google sheet'}
+	<a target='_blank'
+	   href={`https://docs.google.com/spreadsheets/d/${s.google_sheet_id}/edit`}>${s.google_sheet_id}</a>
+	{/if}
+      </td>
       <td>
 	<button on:click={()=>delSource(s.id)}>delete</button>
 	{#if s.typ==='google sheet'}
-	  <button on:click={()=>loadContents(s.google_sheet_id,s)}>sync</button>
+	  <button on:click={()=>loadContents(s.google_sheet_id,s)} disabled={!signedIn}>sync</button>
 	{/if}
       </td>
     </tr>
