@@ -32,11 +32,15 @@ validate_token.cv.FUNCTION.sql
 validation_reset.FUNCTION.sql
 verify_token.text,.text.FUNCTION.sql
 attendees.TABLE.sql
+TABLE.attendees.COMMENT.sql
 attendees_id_seq.SEQUENCE.sql
 attendees_id_seq.SEQUENCE.OWNED.BY.sql
 attendees_sources.TABLE.sql
+TABLE.attendees_sources.COMMENT.sql
 events.TABLE.sql
+TABLE.events.COMMENT.sql
 events_attendance.TABLE.sql
+TABLE.events_attendance.COMMENT.sql
 events_attendance_id_seq.SEQUENCE.sql
 events_attendance_id_seq.SEQUENCE.OWNED.BY.sql
 events_id_seq.SEQUENCE.sql
