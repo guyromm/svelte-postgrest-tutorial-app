@@ -2,7 +2,7 @@
 --
 
 ALTER TABLE ONLY public.events_attendance
-    ADD CONSTRAINT events_attendance_owner_fkey FOREIGN KEY (owner) REFERENCES basic_auth.users(email);
+    ADD CONSTRAINT events_attendance_owner_fkey FOREIGN KEY (owner_id) REFERENCES basic_auth.users(email);
 
 
 --
