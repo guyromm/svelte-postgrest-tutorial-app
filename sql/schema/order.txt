@@ -8,6 +8,7 @@ check_role_exists.FUNCTION.sql
 encrypt_pass.FUNCTION.sql
 user_role.text,.text.FUNCTION.sql
 user_validated.text,.text.FUNCTION.sql
+attendance_notify.FUNCTION.sql
 invite.cv.FUNCTION.sql
 jwt_test.FUNCTION.sql
 login.text,.text.FUNCTION.sql
@@ -63,6 +64,7 @@ users.encrypt_pass.TRIGGER.sql
 users.ensure_user_role_exists.TRIGGER.sql
 users.users_notify.TRIGGER.sql
 users.users_pass_reset_notify_trig.TRIGGER.sql
+events_attendance.attendance_notify_trig.TRIGGER.sql
 attendees.attendees_attendee_source_id_fkey.FK.CONSTRAINT.sql
 attendees.attendees_owner_fkey.FK.CONSTRAINT.sql
 attendees_sources.attendees_sources_owner_id_fkey.FK.CONSTRAINT.sql

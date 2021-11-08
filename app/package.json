@@ -28,6 +28,7 @@
     "lorem-ipsum": "^2.0.3",
     "qs": "^6.10.1",
     "rollup-plugin-babel": "^4.4.0",
-    "rollup-plugin-svelte": "^7.1.0"
+    "rollup-plugin-svelte": "^7.1.0",
+    "socket.io-client": "^4.3.2"
   }
 }

@@ -76,8 +76,10 @@ polka({ server }) // You can also use Express
 // helper func to figure out if client is authorized for
 // action/resource access
 async function isAuthorized(o, user) {
-  let rt = false
-  return rt
+    let rt = false    
+    if (o.owner_id===user) rt=true;
+    l('isAuthorized',o.owner_id,user,'=>',rt);
+    return rt
 }
 
 async function pgconn() {
@@ -118,6 +120,7 @@ const io = new Server(server, { cors })
 
 // pg channels to listen on for events to pass on to connected clients
 const listens = [
+    'events_attendance',
  // INSERT LISTENED CHANNELS LIST HERE
 ]
 let sockets = {}
