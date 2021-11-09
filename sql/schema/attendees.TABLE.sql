@@ -8,7 +8,8 @@ CREATE TABLE public.attendees (
     owner_id character varying DEFAULT current_setting('request.jwt.claim.email'::text, true),
     email character varying,
     first_name character varying,
-    last_name character varying
+    last_name character varying,
+    meta jsonb
 );
 
 
