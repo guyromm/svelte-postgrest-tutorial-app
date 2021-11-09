@@ -83,7 +83,7 @@
     if (!s)
     {
       try {
-	s = (await (await insert('attendees_sources',{id:o.result.properties.title,
+	s = (await (await insert('attendees_sources',{name:o.result.properties.title,
 						      google_sheet_id:sheetId,
 						     })).json())[0];
       } catch (err) {
