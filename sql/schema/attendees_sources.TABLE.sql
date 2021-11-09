@@ -2,10 +2,11 @@
 --
 
 CREATE TABLE public.attendees_sources (
-    id character varying NOT NULL,
+    id integer DEFAULT nextval('public.attendees_sources_id_seq'::regclass) NOT NULL,
     ts timestamp with time zone DEFAULT now(),
     owner_id character varying DEFAULT current_setting('request.jwt.claim.email'::text, true),
-    google_sheet_id character varying
+    google_sheet_id character varying,
+    name character varying NOT NULL
 );
 
 
