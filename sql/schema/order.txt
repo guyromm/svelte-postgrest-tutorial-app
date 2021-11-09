@@ -62,8 +62,9 @@ users.ensure_user_role_exists.TRIGGER.sql
 users.users_notify.TRIGGER.sql
 users.users_pass_reset_notify_trig.TRIGGER.sql
 attendees.attendees_attendee_source_id_fkey.FK.CONSTRAINT.sql
-attendees.attendees_owner_fkey.FK.CONSTRAINT.sql
+attendees.attendees_owner_id_fkey.FK.CONSTRAINT.sql
 attendees_sources.attendees_sources_owner_id_fkey.FK.CONSTRAINT.sql
+events_attendance.event_id_fkey.FK.CONSTRAINT.sql
 events_attendance.events_attendance_attendee_id_fkey.FK.CONSTRAINT.sql
 events_attendance.events_attendance_event_id_fkey.FK.CONSTRAINT.sql
 events_attendance.events_attendance_owner_fkey.FK.CONSTRAINT.sql
