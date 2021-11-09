@@ -1,7 +1,7 @@
 CREATE TABLE public.events (
     id integer NOT NULL,
     ts timestamp with time zone DEFAULT now(),
-    attendee_source_id character varying NOT NULL,
+    attendee_source_id integer NOT NULL,
     owner_id character varying DEFAULT current_setting('request.jwt.claim.email'::text, true),
     name character varying NOT NULL
 );
@@ -10,7 +10,7 @@ comment on table events is 'event definitions for which we''d like to write down
 CREATE TABLE public.attendees (
     id integer NOT NULL,
     ts timestamp with time zone DEFAULT now(),
-    attendee_source_id character varying NOT NULL,
+    attendee_source_id integer NOT NULL,
     owner_id character varying DEFAULT current_setting('request.jwt.claim.email'::text, true),
     email character varying,
     first_name character varying,
@@ -27,12 +27,14 @@ CREATE SEQUENCE public.events_id_seq
     NO MAXVALUE
     CACHE 1;
 ALTER TABLE ONLY public.events ALTER COLUMN id SET DEFAULT nextval('public.events_id_seq'::regclass);
-    
+
+
 CREATE TABLE public.attendees_sources (
-    id character varying NOT NULL,
+    id integer NOT NULL,
     ts timestamp with time zone DEFAULT now(),
     owner_id character varying DEFAULT current_setting('request.jwt.claim.email'::text, true),
-    google_sheet_id character varying
+    google_sheet_id character varying,
+    name character varying NOT NULL
 );
 comment on table attendees_sources is 'attendee list sources. these would be google sheets or uploaded csv files';
 
@@ -96,3 +98,13 @@ ALTER TABLE ONLY public.events_attendance
     ADD CONSTRAINT events_attendance_attendee_id_fkey FOREIGN KEY (attendee_id) REFERENCES public.attendees(id);
 ALTER TABLE ONLY public.events
     ADD CONSTRAINT events_attendee_source_id_fkey FOREIGN KEY (attendee_source_id) REFERENCES public.attendees_sources(id);
+
+CREATE SEQUENCE public.attendees_sources_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER TABLE ONLY public.attendees_sources ALTER COLUMN id SET DEFAULT nextval('public.attendees_sources_id_seq'::regclass);
