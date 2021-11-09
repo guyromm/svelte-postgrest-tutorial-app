@@ -9,7 +9,7 @@ CREATE TABLE public.attendees (
     email character varying,
     first_name character varying,
     last_name character varying,
-    meta jsonb,
+    meta jsonb
 );
 
 
