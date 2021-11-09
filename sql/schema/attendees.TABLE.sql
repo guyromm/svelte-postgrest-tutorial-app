@@ -5,7 +5,7 @@ CREATE TABLE public.attendees (
     id integer NOT NULL,
     ts timestamp with time zone DEFAULT now(),
     attendee_source_id character varying NOT NULL,
-    owner character varying DEFAULT current_setting('request.jwt.claim.email'::text, true),
+    owner_id character varying DEFAULT current_setting('request.jwt.claim.email'::text, true),
     email character varying,
     first_name character varying,
     last_name character varying
