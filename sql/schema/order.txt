@@ -36,6 +36,7 @@ attendees.TABLE.sql
 TABLE.attendees.COMMENT.sql
 attendees_id_seq.SEQUENCE.sql
 attendees_id_seq.SEQUENCE.OWNED.BY.sql
+attendees_sources_id_seq.SEQUENCE.sql
 attendees_sources.TABLE.sql
 TABLE.attendees_sources.COMMENT.sql
 attendees_sources_id_seq.SEQUENCE.sql
