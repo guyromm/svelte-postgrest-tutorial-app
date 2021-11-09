@@ -84,6 +84,7 @@ FUNCTION.validate.email.cv.ACL.sql
 FUNCTION.verify_token.token.text,.algorithm.text.ACL.sql
 TABLE.attendees.ACL.sql
 SEQUENCE.attendees_id_seq.ACL.sql
+SEQUENCE.attendees_sources_id_seq.ACL.sql
 TABLE.attendees_sources.ACL.sql
 TABLE.events.ACL.sql
 TABLE.events_attendance.ACL.sql
