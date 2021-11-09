@@ -10,7 +10,7 @@ CREATE TABLE public.attendees (
     id integer NOT NULL,
     ts timestamp with time zone DEFAULT now(),
     attendee_source_id character varying NOT NULL,
-    owner character varying DEFAULT current_setting('request.jwt.claim.email'::text, true),
+    owner_id character varying DEFAULT current_setting('request.jwt.claim.email'::text, true),
     email character varying,
     first_name character varying,
     last_name character varying
@@ -40,7 +40,7 @@ CREATE TABLE public.events_attendance (
     attendee_id integer NOT NULL,
     is_present boolean,
     notes character varying,
-    event_id integer not null references public.events(id) on update cascade on delete cascade
+    event_id integer not null
 );
 comment on table events_attendance is 'actual attendance to events by attendees';
 
@@ -73,9 +73,11 @@ ALTER TABLE ONLY public.attendees
     ADD CONSTRAINT attendees_pkey PRIMARY KEY (id);
 ALTER TABLE ONLY public.events
     ADD CONSTRAINT events_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES basic_auth.users(email);
+alter table events_attendance
+      add constraint "event_id_fkey" foreign key (event_id) references public.events(id) on update cascade on delete cascade;
 ALTER SEQUENCE public.events_attendance_id_seq OWNED BY public.events_attendance.id;
 ALTER TABLE ONLY public.attendees
-    ADD CONSTRAINT attendees_owner_fkey FOREIGN KEY (owner) REFERENCES basic_auth.users(email);
+    ADD CONSTRAINT attendees_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES basic_auth.users(email);
 ALTER TABLE ONLY public.attendees_sources
     ADD CONSTRAINT attendees_sources_pkey PRIMARY KEY (id);
 ALTER TABLE ONLY public.events_attendance
@@ -83,7 +85,7 @@ ALTER TABLE ONLY public.events_attendance
 ALTER TABLE ONLY public.attendees
     ADD CONSTRAINT attendees_attendee_source_id_fkey FOREIGN KEY (attendee_source_id) REFERENCES public.attendees_sources(id);
 ALTER TABLE ONLY public.events_attendance
-    ADD CONSTRAINT events_attendance_owner_fkey FOREIGN KEY (owner) REFERENCES basic_auth.users(email);
+    ADD CONSTRAINT events_attendance_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES basic_auth.users(email);
 ALTER TABLE ONLY public.attendees_sources
     ADD CONSTRAINT attendees_sources_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES basic_auth.users(email);
 ALTER TABLE ONLY public.events_attendance
