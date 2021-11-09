@@ -68,6 +68,7 @@ events_attendance.events_attendance_event_id_fkey.FK.CONSTRAINT.sql
 events_attendance.events_attendance_owner_fkey.FK.CONSTRAINT.sql
 events.events_attendee_source_id_fkey.FK.CONSTRAINT.sql
 events_attendance.events_attendance_owner_id_fkey.FK.CONSTRAINT.sql
+events.events_attendee_source_id_fkey.FK.CONSTRAINT.sql
 events.events_owner_id_fkey.FK.CONSTRAINT.sql
 attendees.ROW.SECURITY.sql
 attendees.attendees_policy.POLICY.sql
