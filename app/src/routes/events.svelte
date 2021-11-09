@@ -1,7 +1,7 @@
 <script>
   import {onMount} from 'svelte';
   import { page } from '$app/stores'
-  import {select,selectOne,insert} from '../../../common/postgrest.js';
+  import {select,selectOne,insert,del} from '../../../common/postgrest.js';
   const l =console.log;
   let events;
   let sources;
@@ -20,6 +20,11 @@
   let newEvent={name:'',attendee_source_id:null};
   async function create() {
     await insert('events',newEvent);
+    await load();
+  }
+  async function delEvent(eid) {
+    await del('events',{id:'eq.'+eid});
+    await load();
   }
 </script>
 
