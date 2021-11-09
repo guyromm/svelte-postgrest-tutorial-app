@@ -1,8 +1,8 @@
-APPNAME=step0
+APPNAME=attendance
 APP_PORT=3674
 APP_BASE_URI=http://localhost:$APP_PORT
 DBHOST=localhost
-DBNAME=step0
+DBNAME=attendance
 DBADMINSUDO=postgres
 DBPASS=''
 DBUSER=''
